@@ -77,6 +77,28 @@ func ValidIssueColumns() []string {
 	}
 }
 
+func legacyIssueColumns() []string {
+	return []string{fieldType, fieldKey, fieldSummary, fieldStatus, fieldAssignee, fieldReporter, fieldPriority, fieldResolution, fieldCreated, fieldUpdated, fieldLabels}
+}
+
+func defaultIssueColumns() []string {
+	return []string{
+		fieldType,
+		fieldKey,
+		fieldSummary,
+		fieldStatus,
+		fieldAssignee,
+		fieldReporter,
+		fieldPriority,
+		fieldCreated,
+		fieldDueDate,
+	}
+}
+
+func allIssueColumns() []string {
+	return legacyIssueColumns()
+}
+
 // ValidSprintColumns returns valid columns for sprint list.
 func ValidSprintColumns() []string {
 	return []string{

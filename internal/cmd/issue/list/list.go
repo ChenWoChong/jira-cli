@@ -188,6 +188,7 @@ func loadList(cmd *cobra.Command, args []string) {
 			NoTruncate:   noTruncate,
 			FixedColumns: fixedColumns,
 			Comments:     comments,
+			Compact:      true,
 			Columns: func() []string {
 				if columns != "" {
 					return strings.Split(columns, ",")

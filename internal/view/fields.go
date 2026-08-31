@@ -14,6 +14,7 @@ const (
 	fieldResolution   = "RESOLUTION"
 	fieldCreated      = "CREATED"
 	fieldUpdated      = "UPDATED"
+	fieldDueDate      = "DUE_DATE"
 	fieldStartDate    = "START"
 	fieldEndDate      = "END"
 	fieldCompleteDate = "COMPLETE"
