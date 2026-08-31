@@ -157,17 +157,7 @@ func cmdRequireToken(cmd string) bool {
 }
 
 func checkForJiraToken(server string, login string) {
-	if os.Getenv("JIRA_API_TOKEN") != "" {
-		return
-	}
-
-	netrcConfig, _ := netrc.Read(server, login)
-	if netrcConfig != nil {
-		return
-	}
-
-	secret, _ := keyring.Get("jira-cli", login)
-	if secret != "" {
+	if hasJiraToken(server, login) {
 		return
 	}
 
@@ -187,4 +177,18 @@ For more details, see: %s
 
 	cmdutil.Warn(msg)
 	os.Exit(1)
+}
+
+func hasJiraToken(server string, login string) bool {
+	if os.Getenv("JIRA_API_TOKEN") != "" || viper.GetString("api_token") != "" {
+		return true
+	}
+
+	netrcConfig, _ := netrc.Read(server, login)
+	if netrcConfig != nil && netrcConfig.Password != "" {
+		return true
+	}
+
+	secret, _ := keyring.Get("jira-cli", login)
+	return secret != ""
 }
