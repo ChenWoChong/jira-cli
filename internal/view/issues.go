@@ -23,6 +23,7 @@ type DisplayFormat struct {
 	Columns      []string
 	FixedColumns uint
 	Comments     uint
+	Compact      bool
 	TableStyle   tui.TableStyle
 	Timezone     string
 }
@@ -146,7 +147,7 @@ func (l *IssueList) renderCSV(w io.Writer) error {
 }
 
 func (*IssueList) validColumnsMap() map[string]struct{} {
-	columns := ValidIssueColumns()
+	columns := append(allIssueColumns(), fieldDueDate)
 	out := make(map[string]struct{}, len(columns))
 
 	for _, c := range columns {
@@ -158,11 +159,16 @@ func (*IssueList) validColumnsMap() map[string]struct{} {
 
 func (l *IssueList) header() []string {
 	if len(l.Display.Columns) == 0 {
-		validColumns := ValidIssueColumns()
-		if l.Display.NoTruncate || !l.Display.Plain {
-			return validColumns
+		if l.Display.Compact && !l.Display.NoTruncate {
+			return defaultIssueColumns()
 		}
-		return validColumns[0:4]
+		if l.Display.NoTruncate {
+			return allIssueColumns()
+		}
+		if l.Display.Plain {
+			return legacyIssueColumns()[0:4]
+		}
+		return legacyIssueColumns()
 	}
 
 	var (
@@ -229,6 +235,8 @@ func (l *IssueList) assignColumns(columns []string, issue *jira.Issue) []string 
 			bucket = append(bucket, formatDateTime(issue.Fields.Created, jira.RFC3339, l.Display.Timezone))
 		case fieldUpdated:
 			bucket = append(bucket, formatDateTime(issue.Fields.Updated, jira.RFC3339, l.Display.Timezone))
+		case fieldDueDate:
+			bucket = append(bucket, issue.Fields.DueDate)
 		case fieldLabels:
 			bucket = append(bucket, strings.Join(issue.Fields.Labels, ","))
 		}

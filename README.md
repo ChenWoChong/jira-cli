@@ -167,6 +167,13 @@ not affected.
 
 Issue lists are ordered by `priority` by default. Use `--order-by` to choose another field.
 
+The default issue columns include `DUE_DATE` (Jira's due date) and omit `RESOLUTION` and `LABELS` to keep the list
+focused. Both omitted fields remain available with `--columns`, for example:
+
+```sh
+jira issue list --plain --columns key,summary,due_date,resolution,labels
+```
+
 The `--unfinished` flag adds `statusCategory != Done` to the query and is enabled by default. Use `--all` to disable
 that filter for a single invocation. For example, with the configuration above, `jira issue list` shows only your
 unfinished issues, while `jira issue list --all` shows all of your issues. An explicit `--jql/-q` query replaces the
