@@ -219,6 +219,12 @@ func applyDefaultJQL(cmd *cobra.Command) {
 
 // applyUnfinishedFilter adds a status-category filter when requested.
 func applyUnfinishedFilter(cmd *cobra.Command) {
+	all, err := cmd.Flags().GetBool("all")
+	cmdutil.ExitIfError(err)
+	if all {
+		return
+	}
+
 	unfinished, err := cmd.Flags().GetBool("unfinished")
 	cmdutil.ExitIfError(err)
 	if !unfinished {
@@ -275,7 +281,8 @@ func SetFlags(cmd *cobra.Command) {
 	cmd.Flags().String("created-before", "", "Filter by issues created before certain date")
 	cmd.Flags().String("updated-before", "", "Filter by issues updated before certain date")
 	cmd.Flags().StringP("jql", "q", "", "Run a raw JQL query in a given project context")
-	cmd.Flags().Bool("unfinished", false, "Only show issues that are not in the Done status category")
+	cmd.Flags().Bool("unfinished", true, "Only show issues that are not in the Done status category")
+	cmd.Flags().Bool("all", false, "Show issues in all status categories")
 	cmd.Flags().String("order-by", "priority", "Field to order the list with")
 	cmd.Flags().Bool("reverse", false, "Reverse the display order (default \"DESC\")")
 	cmd.Flags().String("paginate", "0:100", "Paginate the result. Max 100 at a time, format: <from>:<limit> where <from> is optional")

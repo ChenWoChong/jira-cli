@@ -93,8 +93,8 @@ Then list issues in the configured project:
 jira issue list
 ```
 
-The issue list is ordered by priority (highest first) by default. Use `--unfinished` to hide issues in the `Done`
-status category.
+The issue list is ordered by priority (highest first) and shows unfinished issues by default. Use `--all` to include
+issues in every status category.
 
 #### Cloud server
 
@@ -167,9 +167,10 @@ not affected.
 
 Issue lists are ordered by `priority` by default. Use `--order-by` to choose another field.
 
-The `--unfinished` flag adds `statusCategory != Done` to the query. For example, with the configuration above,
-`jira issue list --unfinished` shows only your unfinished issues. An explicit `--jql/-q` query replaces the configured
-default query and can still be combined with `--unfinished`.
+The `--unfinished` flag adds `statusCategory != Done` to the query and is enabled by default. Use `--all` to disable
+that filter for a single invocation. For example, with the configuration above, `jira issue list` shows only your
+unfinished issues, while `jira issue list --all` shows all of your issues. An explicit `--jql/-q` query replaces the
+configured default query and can still be combined with `--unfinished` or `--all`.
 
 ## Usage
 The tool currently comes with an issue, epic, and sprint explorer. The flags are [POSIX-compliant](https://www.gnu.org/software/libc/manual/html_node/Argument-Syntax.html).
@@ -227,8 +228,8 @@ $ jira issue list --raw
 # List recent issues in csv format
 $ jira issue list --csv
 
-# List only unfinished issues
-$ jira issue list --unfinished
+# List all issues, including completed issues
+$ jira issue list --all
 
 # List issue in the same order as you see in the UI
 $ jira issue list --order-by rank --reverse
