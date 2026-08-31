@@ -79,6 +79,23 @@ Follow the [installation guide](https://github.com/ankitpokhrel/jira-cli/wiki/In
 
 ## Getting started
 
+### Quick start
+
+After installing `jira-cli`, initialize a configuration for your Jira instance:
+
+```sh
+jira init
+```
+
+Then list issues in the configured project:
+
+```sh
+jira issue list
+```
+
+The issue list is ordered by priority (highest first) by default. Use `--unfinished` to hide issues in the `Done`
+status category.
+
 #### Cloud server
 
 1. [Get a Jira API token](https://id.atlassian.com/manage-profile/security/api-tokens) and export it to your shell as
@@ -150,6 +167,10 @@ not affected.
 
 Issue lists are ordered by `priority` by default. Use `--order-by` to choose another field.
 
+The `--unfinished` flag adds `statusCategory != Done` to the query. For example, with the configuration above,
+`jira issue list --unfinished` shows only your unfinished issues. An explicit `--jql/-q` query replaces the configured
+default query and can still be combined with `--unfinished`.
+
 ## Usage
 The tool currently comes with an issue, epic, and sprint explorer. The flags are [POSIX-compliant](https://www.gnu.org/software/libc/manual/html_node/Argument-Syntax.html).
 You can combine available flags in any order to create a unique query. For example, the command below will give you high priority issues created this month
@@ -184,7 +205,8 @@ The lists are displayed in an interactive UI by default.
 Issues are displayed in an interactive table view by default. You can output the results in a plain view using the `--plain` flag.
 
 #### List
-The `list` command lets you search and navigate the issues. The issues are sorted by `created` field in descending order by default.
+The `list` command lets you search and navigate issues. Results are sorted by `priority` in descending order by
+default; use `--order-by` and `--reverse` to change the ordering.
 
 ```sh
 # List recent issues
@@ -204,6 +226,9 @@ $ jira issue list --raw
 
 # List recent issues in csv format
 $ jira issue list --csv
+
+# List only unfinished issues
+$ jira issue list --unfinished
 
 # List issue in the same order as you see in the UI
 $ jira issue list --order-by rank --reverse
