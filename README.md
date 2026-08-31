@@ -134,6 +134,20 @@ $ JIRA_CONFIG_FILE=./local_jira_config.yaml jira issue list
 $ jira issue list -c ./local_jira_config.yaml
 ```
 
+#### Default issue list query
+
+Configure a default JQL query for `jira issue list` in the config file. It is used only when `--jql/-q` is not
+supplied, so it can be overridden per command.
+
+```yaml
+issue:
+  list:
+    jql: 'assignee = currentUser()'
+```
+
+With this setting, `jira issue list` shows issues assigned to the current user by default. Other issue commands are
+not affected.
+
 ## Usage
 The tool currently comes with an issue, epic, and sprint explorer. The flags are [POSIX-compliant](https://www.gnu.org/software/libc/manual/html_node/Argument-Syntax.html).
 You can combine available flags in any order to create a unique query. For example, the command below will give you high priority issues created this month
