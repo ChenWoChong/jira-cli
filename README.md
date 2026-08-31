@@ -148,6 +148,8 @@ issue:
 With this setting, `jira issue list` shows issues assigned to the current user by default. Other issue commands are
 not affected.
 
+Issue lists are ordered by `priority` by default. Use `--order-by` to choose another field.
+
 ## Usage
 The tool currently comes with an issue, epic, and sprint explorer. The flags are [POSIX-compliant](https://www.gnu.org/software/libc/manual/html_node/Argument-Syntax.html).
 You can combine available flags in any order to create a unique query. For example, the command below will give you high priority issues created this month
