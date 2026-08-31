@@ -45,3 +45,34 @@ func TestApplyDefaultJQL(t *testing.T) {
 		assert.Equal(t, "", cmd.Flag("jql").Value.String())
 	})
 }
+
+func TestApplyUnfinishedFilter(t *testing.T) {
+	t.Run("adds the unfinished filter", func(t *testing.T) {
+		cmd := newJQLTestCommand()
+		cmd.Flags().Bool("unfinished", true, "")
+
+		applyUnfinishedFilter(cmd)
+
+		assert.Equal(t, "statusCategory != Done", cmd.Flag("jql").Value.String())
+	})
+
+	t.Run("combines with an existing query", func(t *testing.T) {
+		cmd := newJQLTestCommand()
+		cmd.Flags().Bool("unfinished", true, "")
+		assert.NoError(t, cmd.Flags().Set("jql", "assignee = currentUser()"))
+
+		applyUnfinishedFilter(cmd)
+
+		assert.Equal(t, "(assignee = currentUser()) AND statusCategory != Done", cmd.Flag("jql").Value.String())
+	})
+
+	t.Run("does not change the query when disabled", func(t *testing.T) {
+		cmd := newJQLTestCommand()
+		cmd.Flags().Bool("unfinished", false, "")
+		assert.NoError(t, cmd.Flags().Set("jql", "assignee = currentUser()"))
+
+		applyUnfinishedFilter(cmd)
+
+		assert.Equal(t, "assignee = currentUser()", cmd.Flag("jql").Value.String())
+	})
+}

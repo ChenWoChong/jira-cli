@@ -242,6 +242,13 @@ jira issue list -a$(jira me) -yHigh -sopen
 ```
 </details>
 
+<details><summary>List issues that are not done</summary>
+
+```sh
+jira issue list --unfinished
+```
+</details>
+
 <details><summary>List issues assigned to no one and are created this week</summary>
 
 ```sh
