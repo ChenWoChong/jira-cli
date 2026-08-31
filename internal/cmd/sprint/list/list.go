@@ -311,4 +311,5 @@ func hideFlags(cmd *cobra.Command) {
 	cmdutil.ExitIfError(cmd.Flags().MarkHidden("label"))
 	cmdutil.ExitIfError(cmd.Flags().MarkHidden("reverse"))
 	cmdutil.ExitIfError(cmd.Flags().MarkHidden("unfinished"))
+	cmdutil.ExitIfError(cmd.Flags().MarkHidden("all"))
 }

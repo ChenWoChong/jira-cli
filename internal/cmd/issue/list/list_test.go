@@ -11,6 +11,8 @@ import (
 func newJQLTestCommand() *cobra.Command {
 	cmd := &cobra.Command{}
 	cmd.Flags().String("jql", "", "")
+	cmd.Flags().Bool("unfinished", false, "")
+	cmd.Flags().Bool("all", false, "")
 	return cmd
 }
 
@@ -49,7 +51,7 @@ func TestApplyDefaultJQL(t *testing.T) {
 func TestApplyUnfinishedFilter(t *testing.T) {
 	t.Run("adds the unfinished filter", func(t *testing.T) {
 		cmd := newJQLTestCommand()
-		cmd.Flags().Bool("unfinished", true, "")
+		assert.NoError(t, cmd.Flags().Set("unfinished", "true"))
 
 		applyUnfinishedFilter(cmd)
 
@@ -58,7 +60,7 @@ func TestApplyUnfinishedFilter(t *testing.T) {
 
 	t.Run("combines with an existing query", func(t *testing.T) {
 		cmd := newJQLTestCommand()
-		cmd.Flags().Bool("unfinished", true, "")
+		assert.NoError(t, cmd.Flags().Set("unfinished", "true"))
 		assert.NoError(t, cmd.Flags().Set("jql", "assignee = currentUser()"))
 
 		applyUnfinishedFilter(cmd)
@@ -68,7 +70,17 @@ func TestApplyUnfinishedFilter(t *testing.T) {
 
 	t.Run("does not change the query when disabled", func(t *testing.T) {
 		cmd := newJQLTestCommand()
-		cmd.Flags().Bool("unfinished", false, "")
+		assert.NoError(t, cmd.Flags().Set("jql", "assignee = currentUser()"))
+
+		applyUnfinishedFilter(cmd)
+
+		assert.Equal(t, "assignee = currentUser()", cmd.Flag("jql").Value.String())
+	})
+
+	t.Run("does not add the filter when all issues are requested", func(t *testing.T) {
+		cmd := newJQLTestCommand()
+		assert.NoError(t, cmd.Flags().Set("unfinished", "true"))
+		assert.NoError(t, cmd.Flags().Set("all", "true"))
 		assert.NoError(t, cmd.Flags().Set("jql", "assignee = currentUser()"))
 
 		applyUnfinishedFilter(cmd)
@@ -78,7 +90,7 @@ func TestApplyUnfinishedFilter(t *testing.T) {
 
 	t.Run("is idempotent across refreshes", func(t *testing.T) {
 		cmd := newJQLTestCommand()
-		cmd.Flags().Bool("unfinished", true, "")
+		assert.NoError(t, cmd.Flags().Set("unfinished", "true"))
 
 		applyUnfinishedFilter(cmd)
 		applyUnfinishedFilter(cmd)
