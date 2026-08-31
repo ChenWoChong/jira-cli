@@ -99,6 +99,7 @@ func loadList(cmd *cobra.Command, args []string) {
 	cmdutil.ExitIfError(err)
 
 	applyDefaultJQL(cmd)
+	applyUnfinishedFilter(cmd)
 
 	if len(args) > 0 {
 		searchQuery := fmt.Sprintf(`text ~ %q`, strings.Join(args, " "))
@@ -216,6 +217,24 @@ func applyDefaultJQL(cmd *cobra.Command) {
 	_ = cmd.Flags().Set("jql", defaultJQL)
 }
 
+// applyUnfinishedFilter adds a status-category filter when requested.
+func applyUnfinishedFilter(cmd *cobra.Command) {
+	unfinished, err := cmd.Flags().GetBool("unfinished")
+	cmdutil.ExitIfError(err)
+	if !unfinished {
+		return
+	}
+
+	jql, err := cmd.Flags().GetString("jql")
+	cmdutil.ExitIfError(err)
+	filter := "statusCategory != Done"
+	if strings.TrimSpace(jql) == "" {
+		_ = cmd.Flags().Set("jql", filter)
+		return
+	}
+	_ = cmd.Flags().Set("jql", fmt.Sprintf("(%s) AND %s", jql, filter))
+}
+
 func outputRawJSON(issues []*jira.Issue) {
 	data, err := json.MarshalIndent(issues, "", "  ")
 	if err != nil {
@@ -253,6 +272,7 @@ func SetFlags(cmd *cobra.Command) {
 	cmd.Flags().String("created-before", "", "Filter by issues created before certain date")
 	cmd.Flags().String("updated-before", "", "Filter by issues updated before certain date")
 	cmd.Flags().StringP("jql", "q", "", "Run a raw JQL query in a given project context")
+	cmd.Flags().Bool("unfinished", false, "Only show issues that are not in the Done status category")
 	cmd.Flags().String("order-by", "created", "Field to order the list with")
 	cmd.Flags().Bool("reverse", false, "Reverse the display order (default \"DESC\")")
 	cmd.Flags().String("paginate", "0:100", "Paginate the result. Max 100 at a time, format: <from>:<limit> where <from> is optional")
