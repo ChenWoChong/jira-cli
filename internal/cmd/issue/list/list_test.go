@@ -75,4 +75,14 @@ func TestApplyUnfinishedFilter(t *testing.T) {
 
 		assert.Equal(t, "assignee = currentUser()", cmd.Flag("jql").Value.String())
 	})
+
+	t.Run("is idempotent across refreshes", func(t *testing.T) {
+		cmd := newJQLTestCommand()
+		cmd.Flags().Bool("unfinished", true, "")
+
+		applyUnfinishedFilter(cmd)
+		applyUnfinishedFilter(cmd)
+
+		assert.Equal(t, "statusCategory != Done", cmd.Flag("jql").Value.String())
+	})
 }

@@ -228,6 +228,9 @@ func applyUnfinishedFilter(cmd *cobra.Command) {
 	jql, err := cmd.Flags().GetString("jql")
 	cmdutil.ExitIfError(err)
 	filter := "statusCategory != Done"
+	if strings.Contains(strings.ToLower(jql), strings.ToLower(filter)) {
+		return
+	}
 	if strings.TrimSpace(jql) == "" {
 		_ = cmd.Flags().Set("jql", filter)
 		return
@@ -273,7 +276,7 @@ func SetFlags(cmd *cobra.Command) {
 	cmd.Flags().String("updated-before", "", "Filter by issues updated before certain date")
 	cmd.Flags().StringP("jql", "q", "", "Run a raw JQL query in a given project context")
 	cmd.Flags().Bool("unfinished", false, "Only show issues that are not in the Done status category")
-	cmd.Flags().String("order-by", "created", "Field to order the list with")
+	cmd.Flags().String("order-by", "priority", "Field to order the list with")
 	cmd.Flags().Bool("reverse", false, "Reverse the display order (default \"DESC\")")
 	cmd.Flags().String("paginate", "0:100", "Paginate the result. Max 100 at a time, format: <from>:<limit> where <from> is optional")
 	cmd.Flags().Bool("plain", false, "Display output in plain mode")
