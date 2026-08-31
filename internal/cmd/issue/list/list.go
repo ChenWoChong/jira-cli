@@ -98,6 +98,8 @@ func loadList(cmd *cobra.Command, args []string) {
 	err = cmd.Flags().Set("parent", cmdutil.GetJiraIssueKey(project, pk))
 	cmdutil.ExitIfError(err)
 
+	applyDefaultJQL(cmd)
+
 	if len(args) > 0 {
 		searchQuery := fmt.Sprintf(`text ~ %q`, strings.Join(args, " "))
 
@@ -197,6 +199,21 @@ func loadList(cmd *cobra.Command, args []string) {
 	}
 
 	cmdutil.ExitIfError(v.Render())
+}
+
+// applyDefaultJQL applies the configured issue-list query unless the caller
+// supplied an explicit --jql flag.
+func applyDefaultJQL(cmd *cobra.Command) {
+	if cmd.Flags().Changed("jql") {
+		return
+	}
+
+	defaultJQL := strings.TrimSpace(viper.GetString("issue.list.jql"))
+	if defaultJQL == "" {
+		return
+	}
+
+	_ = cmd.Flags().Set("jql", defaultJQL)
 }
 
 func outputRawJSON(issues []*jira.Issue) {
