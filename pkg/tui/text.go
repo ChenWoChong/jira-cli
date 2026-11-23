@@ -26,12 +26,14 @@ func NewText() *Text {
 
 // Render renders the text layout.
 func (tv *Text) Render(td TextData) error {
-	tv.painter.SetText(string(td))
+	tv.painter.SetText(tview.TranslateANSI(string(td)))
 	return tv.screen.Paint(tv.painter)
 }
 
 func (tv *Text) init() {
-	view := tview.NewTextView()
+	view := tview.NewTextView().
+		SetDynamicColors(true).
+		SetScrollable(true)
 
 	view.SetDoneFunc(func(key tcell.Key) {
 		if key == tcell.KeyEsc {
@@ -40,9 +42,15 @@ func (tv *Text) init() {
 	}).SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyRune && event.Rune() == 'q' {
 			tv.screen.Stop()
+			return nil
 		}
 		return event
 	})
 
 	tv.painter = view
+}
+
+// ViewText displays text in the built-in scrollable viewer.
+func ViewText(out string) error {
+	return NewText().Render(TextData(out))
 }

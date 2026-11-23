@@ -11,7 +11,7 @@ type Screen struct {
 
 // NewScreen creates a new screen.
 func NewScreen() *Screen {
-	app := tview.NewApplication()
+	app := tview.NewApplication().EnableMouse(true)
 	return &Screen{app}
 }
 

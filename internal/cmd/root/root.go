@@ -6,6 +6,7 @@ import (
 	"slices"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
 	"github.com/ankitpokhrel/jira-cli/api"
@@ -14,6 +15,7 @@ import (
 	"github.com/ankitpokhrel/jira-cli/internal/cmd/epic"
 	initCmd "github.com/ankitpokhrel/jira-cli/internal/cmd/init"
 	"github.com/ankitpokhrel/jira-cli/internal/cmd/issue"
+	issueList "github.com/ankitpokhrel/jira-cli/internal/cmd/issue/list"
 	"github.com/ankitpokhrel/jira-cli/internal/cmd/man"
 	"github.com/ankitpokhrel/jira-cli/internal/cmd/me"
 	"github.com/ankitpokhrel/jira-cli/internal/cmd/open"
@@ -35,6 +37,8 @@ const (
 var (
 	config string
 	debug  bool
+
+	defaultList bool
 )
 
 func init() {
@@ -74,10 +78,17 @@ func NewCmdRoot() *cobra.Command {
 		Short: "Interactive Jira CLI",
 		Long:  "Interactive Jira command line.",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if defaultList {
+				issueList.List(cmd, args)
+				return nil
+			}
 			return cmd.Help()
 		},
 		PersistentPreRun: func(cmd *cobra.Command, _ []string) {
 			subCmd := cmd.Name()
+			if defaultList {
+				subCmd = "list"
+			}
 			if !cmdRequireToken(subCmd) {
 				return
 			}
@@ -111,6 +122,10 @@ func NewCmdRoot() *cobra.Command {
 		),
 	)
 	cmd.PersistentFlags().BoolVar(&debug, "debug", false, "Turn on debug output")
+	cmd.Flags().BoolVarP(
+		&defaultList, "default", "d", false,
+		"Show the default issue list (same as 'jira issue list')",
+	)
 
 	cmd.SetHelpFunc(helpFunc)
 
@@ -119,8 +134,29 @@ func NewCmdRoot() *cobra.Command {
 	_ = viper.BindPFlag("debug", cmd.PersistentFlags().Lookup("debug"))
 
 	addChildCommands(&cmd)
+	addDefaultListFlags(&cmd)
 
 	return &cmd
+}
+
+// addDefaultListFlags makes issue list flags available to the root command so
+// that `jira -d ...` behaves exactly like `jira issue list ...`.
+func addDefaultListFlags(cmd *cobra.Command) {
+	existing := make(map[string]struct{})
+	cmd.Flags().VisitAll(func(f *pflag.Flag) {
+		existing[f.Name] = struct{}{}
+	})
+	cmd.PersistentFlags().VisitAll(func(f *pflag.Flag) {
+		existing[f.Name] = struct{}{}
+	})
+
+	issueList.SetFlags(cmd)
+
+	cmd.Flags().VisitAll(func(f *pflag.Flag) {
+		if _, ok := existing[f.Name]; !ok {
+			f.Hidden = true
+		}
+	})
 }
 
 func addChildCommands(cmd *cobra.Command) {

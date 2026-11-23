@@ -70,7 +70,7 @@ func (l *IssueList) Render() error {
 		tui.WithTableStyle(l.Display.TableStyle),
 		tui.WithTableFooterText(l.FooterText),
 		tui.WithTableHelpText(tableHelpText),
-		tui.WithSelectedFunc(navigate(l.Server)),
+		tui.WithBrowseFunc(tui.BrowseFunc(navigate(l.Server))),
 		tui.WithViewModeFunc(func(r, c int, _ any) (func() any, func(any) (string, error)) {
 			dataFn := func() any {
 				ci := data.GetIndex(fieldKey)

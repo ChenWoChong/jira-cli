@@ -295,7 +295,7 @@ func SetFlags(cmd *cobra.Command) {
 	cmd.Flags().Bool("raw", false, "Print raw JSON output")
 	cmd.Flags().Bool("csv", false, "Print output in CSV format")
 
-	if cmd.HasParent() && cmd.Parent().Name() != "sprint" {
+	if cmd.Parent() == nil || cmd.Parent().Name() != "sprint" {
 		cmd.Flags().String("columns", "", "Comma separated list of columns to display in the plain mode.\n"+
 			fmt.Sprintf("Accepts: %s", strings.Join(view.ValidIssueColumns(), ", ")))
 		cmd.Flags().Uint("fixed-columns", 1, "Number of fixed columns in the interactive mode")

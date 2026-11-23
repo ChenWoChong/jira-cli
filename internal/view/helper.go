@@ -46,14 +46,15 @@ const (
 ----------------------------
 
 * [yellow]← → ↑ ↓ / j, k, h, l[default] to navigate through the list
-* [yellow]g[default] to quickly navigate to the top of the list
+* [yellow]g[default] to open selected issue in the browser
 * [yellow]G[default] to quickly navigate to the bottom of the list
 * [yellow]CTRL + f[default] to scroll through a page downwards
 * [yellow]CTRL + b[default] to scroll through a page upwards
-* [yellow]v[default] to view selected issue details
-* [yellow]m[default] to move/transition selected issue
+* [yellow]v[default] to view selected issue details (q / ESC to close)
+* [yellow]ENTER / i / m[default] to move/transition selected issue
 * [yellow]CTRL + r / F5[default] to refresh the issues list
-* [yellow]ENTER[default] to open the selected issue in the browser
+* mouse click[default] to select an issue
+* double click[default] to open the selected issue in the browser
 * [yellow]c[default] to copy issue URL to the system clipboard
 * [yellow]CTRL + k[default] to copy issue key to the system clipboard
 * [yellow]q / ESC / CTRL + c[default] to quit the app

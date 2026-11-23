@@ -19,10 +19,14 @@ const (
 var errNoData = fmt.Errorf("no data")
 
 // SelectedFunc is fired when a user press enter key in the table cell.
+// It is ignored when MoveFunc is set.
 type SelectedFunc func(row, column int, data interface{})
 
 // ViewModeFunc sets view mode handler func which gets triggered when a user press 'v'.
 type ViewModeFunc func(row, col int, data interface{}) (func() interface{}, func(data interface{}) (string, error))
+
+// BrowseFunc is fired when a user press 'g' or double-clicks a row in the table.
+type BrowseFunc func(row, col int, data interface{})
 
 // RefreshFunc is fired when a user press 'CTRL+R' or `F5` character in the table.
 type RefreshFunc func()
@@ -33,7 +37,7 @@ type RefreshTableStateFunc func(row, col int, val string)
 // MoveHandlerFunc is a handler for move action.
 type MoveHandlerFunc func(state string) error
 
-// MoveFunc is fired when a user press 'm' character in the table cell.
+// MoveFunc is fired when a user press 'm', 'i', or enter key in the table cell.
 type MoveFunc func(row, col int) func() (key string, actions []string, handler MoveHandlerFunc, status string, refresh RefreshTableStateFunc)
 
 // CopyFunc is fired when a user press 'c' character in the table cell.
@@ -98,6 +102,7 @@ type Table struct {
 	helpText     string
 	selectedFunc SelectedFunc
 	viewModeFunc ViewModeFunc
+	browseFunc   BrowseFunc
 	moveFunc     MoveFunc
 	refreshFunc  RefreshFunc
 	copyFunc     CopyFunc
@@ -128,6 +133,7 @@ func NewTable(opts ...TableOption) *Table {
 	tbl.initTable()
 	tbl.initFooter()
 	tbl.initHelp()
+	tbl.initMouse()
 
 	grid := tview.NewGrid().
 		SetRows(0, 1, 2).
@@ -186,6 +192,13 @@ func WithViewModeFunc(fn ViewModeFunc) TableOption {
 	}
 }
 
+// WithBrowseFunc sets a func that is triggered when a user press 'g' or double-clicks a row.
+func WithBrowseFunc(fn BrowseFunc) TableOption {
+	return func(t *Table) {
+		t.browseFunc = fn
+	}
+}
+
 // WithMoveFunc sets a func that is triggered when an action button is pressed.
 func WithMoveFunc(fn MoveFunc) TableOption {
 	return func(t *Table) {
@@ -232,11 +245,6 @@ func (t *Table) Paint(data TableData) error {
 }
 
 func (t *Table) render(data TableData) {
-	if t.selectedFunc != nil {
-		t.view.SetSelectedFunc(func(r, c int) {
-			t.selectedFunc(r, c, data)
-		})
-	}
 	renderTableHeader(t, data[0])
 	renderTableCell(t, data)
 }
@@ -266,6 +274,15 @@ func (t *Table) initHelp() {
 func (t *Table) initTable() {
 	t.view.SetSelectable(true, false).
 		SetSelectedStyle(customTUIStyle(t.style)).
+		SetSelectedFunc(func(r, c int) {
+			if t.moveFunc != nil {
+				t.move()
+				return
+			}
+			if t.selectedFunc != nil {
+				t.selectedFunc(r, c, t.data)
+			}
+		}).
 		SetDoneFunc(func(key tcell.Key) {
 			if key == tcell.KeyEsc {
 				t.screen.Stop()
@@ -299,6 +316,13 @@ func (t *Table) initTable() {
 					}
 					r, c := t.view.GetSelection()
 					t.copyFunc(r, c, t.data)
+				case 'g':
+					if t.browseFunc == nil {
+						break
+					}
+					r, c := t.view.GetSelection()
+					t.browseFunc(r, c, t.data)
+					return nil
 				case 'v':
 					if t.viewModeFunc == nil {
 						break
@@ -314,78 +338,105 @@ func (t *Table) initTable() {
 
 							out, err := renderFn(dataFn())
 							if err == nil {
-								t.screen.Suspend(func() { _ = PagerOut(out) })
+								t.screen.Suspend(func() { _ = ViewText(out) })
 							}
 						}()
 
 						// Refresh the screen.
 						t.screen.Draw()
 					}()
-				case 'm':
-					if t.moveFunc == nil {
-						break
-					}
-
-					refreshContextInFooter := func() {
-						t.action.GetFooter().SetText("Use TAB or ← → to navigate, ENTER to select, ESC or q to cancel.").SetTextColor(tcell.ColorGray)
-					}
-
-					go func() {
-						func() {
-							t.painter.ShowPage("secondary").SendToFront("secondary")
-							defer func() {
-								t.painter.HidePage("secondary")
-								t.painter.ShowPage("action")
-							}()
-							refreshContextInFooter()
-
-							r, c := t.view.GetSelection()
-							key, actions, handler, currentStatus, refreshFunc := t.moveFunc(r, c)()
-
-							currentStatusIdx := func() int {
-								for i, btn := range actions {
-									if btn == currentStatus {
-										return i
-									}
-								}
-								return 0
-							}
-
-							t.action.ClearButtons().AddButtons(actions).SetFocus(currentStatusIdx())
-							t.action.SetText(
-								fmt.Sprintf("Select desired state to transition %s to:", key),
-							)
-
-							t.action.SetDoneFunc(func(btnIndex int, btnLabel string) {
-								t.action.GetFooter().SetText("Processing. Please wait...").SetTextColor(tcell.ColorGray)
-								t.screen.ForceDraw()
-
-								err := handler(btnLabel)
-								if err != nil {
-									t.action.GetFooter().SetText(
-										fmt.Sprintf("Error: %s", err.Error()),
-									).SetTextColor(tcell.ColorRed)
-									return
-								}
-								t.painter.HidePage("action")
-								refreshContextInFooter()
-
-								if refreshFunc != nil {
-									refreshFunc(r, c, btnLabel)
-									_ = t.Paint(t.data)
-								}
-							})
-						}()
-
-						// Refresh the screen.
-						t.screen.Draw()
-					}()
+				case 'm', 'i':
+					t.move()
 				}
 			}
 			return ev
 		})
 
 	t.view.SetFixed(1, int(t.colFixed))
+}
+
+// initMouse handles double-click on a table row.
+func (t *Table) initMouse() {
+	t.screen.SetMouseCapture(func(event *tcell.EventMouse, action tview.MouseAction) (*tcell.EventMouse, tview.MouseAction) {
+		if action != tview.MouseLeftDoubleClick || t.browseFunc == nil {
+			return event, action
+		}
+
+		x, y := event.Position()
+		if !t.view.InRect(x, y) {
+			return event, action
+		}
+
+		row, col := t.view.CellAt(x, y)
+		if row <= 0 || row >= len(t.data) {
+			return event, action
+		}
+
+		t.browseFunc(row, col, t.data)
+		return nil, action
+	})
+}
+
+// move opens the transition modal for the selected row.
+func (t *Table) move() {
+	if t.moveFunc == nil {
+		return
+	}
+
+	refreshContextInFooter := func() {
+		t.action.GetFooter().SetText("Use TAB or ← → to navigate, ENTER to select, ESC or q to cancel.").SetTextColor(tcell.ColorGray)
+	}
+
+	go func() {
+		func() {
+			t.painter.ShowPage("secondary").SendToFront("secondary")
+			defer func() {
+				t.painter.HidePage("secondary")
+				t.painter.ShowPage("action")
+			}()
+			refreshContextInFooter()
+
+			r, c := t.view.GetSelection()
+			key, actions, handler, currentStatus, refreshFunc := t.moveFunc(r, c)()
+
+			currentStatusIdx := func() int {
+				for i, btn := range actions {
+					if btn == currentStatus {
+						return i
+					}
+				}
+				return 0
+			}
+
+			t.action.ClearButtons().AddButtons(actions).SetFocus(currentStatusIdx())
+			t.action.SetText(
+				fmt.Sprintf("Select desired state to transition %s to:", key),
+			)
+
+			t.action.SetDoneFunc(func(btnIndex int, btnLabel string) {
+				t.action.GetFooter().SetText("Processing. Please wait...").SetTextColor(tcell.ColorGray)
+				t.screen.ForceDraw()
+
+				err := handler(btnLabel)
+				if err != nil {
+					t.action.GetFooter().SetText(
+						fmt.Sprintf("Error: %s", err.Error()),
+					).SetTextColor(tcell.ColorRed)
+					return
+				}
+				t.painter.HidePage("action")
+				refreshContextInFooter()
+
+				if refreshFunc != nil {
+					refreshFunc(r, c, btnLabel)
+					_ = t.Paint(t.data)
+				}
+			})
+		}()
+
+		// Refresh the screen.
+		t.screen.Draw()
+	}()
 }
 
 func renderTableHeader(t *Table, data []string) {

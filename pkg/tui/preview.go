@@ -252,7 +252,7 @@ func (pv *Preview) initContents() {
 
 							out, err := renderFn(dataFn())
 							if err == nil {
-								pv.screen.Suspend(func() { _ = PagerOut(out) })
+								pv.screen.Suspend(func() { _ = ViewText(out) })
 							}
 						}()
 
